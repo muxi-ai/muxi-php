@@ -25,7 +25,10 @@
     "autoload": {
         "psr-4": {
             "Muxi\\": "src/"
-        }
+        },
+        "classmap": [
+            "src/Errors.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
