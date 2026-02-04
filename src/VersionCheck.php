@@ -18,7 +18,7 @@ class VersionCheck
         }
         self::$checked = true;
 
-        if (!self::isDevMode()) {
+        if (self::notificationsDisabled()) {
             return;
         }
 
@@ -40,9 +40,9 @@ class VersionCheck
         }
     }
 
-    private static function isDevMode(): bool
+    private static function notificationsDisabled(): bool
     {
-        return getenv('MUXI_DEBUG') === '1';
+        return getenv('MUXI_SDK_VERSION_NOTIFICATION') === '0';
     }
 
     private static function getCachePath(): ?string
