@@ -16,7 +16,8 @@ class Transport
         private readonly string $secretKey,
         private readonly int $timeout = 30,
         private readonly int $maxRetries = 0,
-        private readonly bool $debug = false
+        private readonly bool $debug = false,
+        private readonly ?string $app = null
     ) {}
 
     public function requestJson(
@@ -38,6 +39,9 @@ class Transport
                 $response = $this->executeRequest($method, $url, $headers, $body);
                 $elapsed = microtime(true) - $startTime;
                 $this->log("{$method} {$fullPath} -> {$response['status']} ({$elapsed}s)");
+
+                // Check for SDK updates (non-blocking, once per process)
+                VersionCheck::checkForUpdates($response['headers']);
 
                 if ($response['status'] >= 400) {
                     $this->handleErrorResponse($response, $method, $url, $attempt, $backoff);
@@ -113,7 +117,7 @@ class Transport
 
     private function buildHeaders(string $method, string $path, string $accept = 'application/json'): array
     {
-        return [
+        $headers = [
             'Authorization' => Auth::buildAuthHeader($this->keyId, $this->secretKey, $method, $path),
             'Content-Type' => 'application/json',
             'Accept' => $accept,
@@ -121,6 +125,12 @@ class Transport
             'X-Muxi-Client' => 'php/' . PHP_VERSION,
             'X-Muxi-Idempotency-Key' => $this->generateUuid(),
         ];
+
+        if (!empty($this->app)) {
+            $headers['X-Muxi-App'] = $this->app;
+        }
+
+        return $headers;
     }
 
     private function formatHeaders(array $headers): array

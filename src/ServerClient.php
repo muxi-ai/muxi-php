@@ -12,7 +12,8 @@ class ServerConfig
         public readonly string $secretKey,
         public readonly int $maxRetries = 0,
         public readonly int $timeout = 30,
-        public readonly bool $debug = false
+        public readonly bool $debug = false,
+        public readonly ?string $_app = null  // Internal: for Console telemetry
     ) {}
 }
 
@@ -32,7 +33,8 @@ class ServerClient
             secretKey: $config->secretKey,
             timeout: $config->timeout,
             maxRetries: $config->maxRetries,
-            debug: $config->debug
+            debug: $config->debug,
+            app: $config->_app
         );
     }
 

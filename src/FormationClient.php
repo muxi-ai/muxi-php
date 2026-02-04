@@ -15,7 +15,8 @@ class FormationConfig
         public readonly ?string $clientKey = null,
         public readonly int $maxRetries = 0,
         public readonly int $timeout = 30,
-        public readonly bool $debug = false
+        public readonly bool $debug = false,
+        public readonly ?string $_app = null  // Internal: for Console telemetry
     ) {}
 }
 
@@ -29,7 +30,8 @@ class FormationTransport
         private readonly ?string $clientKey,
         private readonly int $timeout = 30,
         private readonly int $maxRetries = 0,
-        private readonly bool $debug = false
+        private readonly bool $debug = false,
+        private readonly ?string $app = null
     ) {}
 
     public function requestJson(
@@ -53,6 +55,9 @@ class FormationTransport
                 $response = $this->executeRequest($method, $url, $headers, $body);
                 $elapsed = microtime(true) - $startTime;
                 $this->log("{$method} {$fullPath} -> {$response['status']} ({$elapsed}s)");
+
+                // Check for SDK updates (non-blocking, once per process)
+                VersionCheck::checkForUpdates($response['headers']);
 
                 if ($response['status'] >= 400) {
                     $this->handleErrorResponse($response, $method, $url, $attempt, $backoff);
@@ -157,6 +162,10 @@ class FormationTransport
             'X-Muxi-Idempotency-Key' => $this->generateUuid(),
             'Accept' => $accept,
         ];
+
+        if (!empty($this->app)) {
+            $headers['X-Muxi-App'] = $this->app;
+        }
 
         if ($useAdmin) {
             if (empty($this->adminKey)) {
@@ -336,7 +345,8 @@ class FormationClient
             clientKey: $config->clientKey,
             timeout: $config->timeout,
             maxRetries: $config->maxRetries,
-            debug: $config->debug
+            debug: $config->debug,
+            app: $config->_app
         );
     }
 
