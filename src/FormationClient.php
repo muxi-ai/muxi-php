@@ -16,6 +16,7 @@ class FormationConfig
         public readonly int $maxRetries = 0,
         public readonly int $timeout = 30,
         public readonly bool $debug = false,
+        public readonly string $mode = 'live',  // "live" (default) or "draft" for local dev
         public readonly ?string $_app = null  // Internal: for Console telemetry
     ) {}
 }
@@ -694,7 +695,8 @@ class FormationClient
             return rtrim($config->url, '/') . '/v1';
         }
         if ($config->serverUrl && $config->formationId) {
-            return rtrim($config->serverUrl, '/') . "/api/{$config->formationId}/v1";
+            $prefix = $config->mode === 'draft' ? 'draft' : 'api';
+            return rtrim($config->serverUrl, '/') . "/{$prefix}/{$config->formationId}/v1";
         }
         throw new \InvalidArgumentException('must set baseUrl, url, or serverUrl+formationId');
     }
