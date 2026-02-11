@@ -11,7 +11,7 @@ Official PHP SDK for [MUXI](https://muxi.ai) — infrastructure for AI agents.
 
 ## Requirements
 
-- PHP 8.1+
+- PHP 8.2+
 - ext-curl
 - ext-json
 - ext-openssl
