@@ -1,6 +1,13 @@
 # MUXI PHP SDK
 
-Official PHP SDK for the MUXI AI platform.
+Official PHP SDK for [MUXI](https://muxi.ai) — infrastructure for AI agents.
+
+**Highlights**
+- Pure PHP with curl (no external dependencies)
+- Built-in retries, idempotency, and typed errors
+- Streaming helpers for chat/audio and deploy/log tails
+
+> Need deeper usage notes? See the [User Guide](https://github.com/muxi-ai/muxi-php/blob/main/USER_GUIDE.md) for streaming, retries, and auth details.
 
 ## Requirements
 
