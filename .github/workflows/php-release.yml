@@ -120,6 +120,19 @@ jobs:
             composer require muxi/muxi-php
             ```
 
+  notify_packagist:
+    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Packagist
+        run: |
+          curl -sf -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"repository":{"url":"https://github.com/muxi-ai/muxi-php"}}' \
+            "https://packagist.org/api/github?username=muxi" \
+            -u "muxi:${{ secrets.MUXI_SDK_PACKAGIST_TOKEN }}"
+
   sync_develop:
     if: "!startsWith(github.event.head_commit.message, 'chore: release')"
     needs: release
