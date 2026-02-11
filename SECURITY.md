@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in this SDK, please report it by emailing security@muxi.ai.
+If you discover a security vulnerability in this SDK, please report it by emailing security@muxi.org.
 
 Please include:
 - Description of the vulnerability

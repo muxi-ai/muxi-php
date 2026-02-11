@@ -1,6 +1,6 @@
 # MUXI PHP SDK
 
-Official PHP SDK for [MUXI](https://muxi.ai) — infrastructure for AI agents.
+Official PHP SDK for [MUXI](https://muxi.org) — infrastructure for AI agents.
 
 **Highlights**
 - Pure PHP with curl (no external dependencies)
