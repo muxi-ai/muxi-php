@@ -618,9 +618,9 @@ class FormationClient
         return $this->transport->requestJson('GET', '/overlord', useAdmin: true);
     }
 
-    public function getOverlordPersona(): array
+    public function getOverlordSoul(): array
     {
-        return $this->transport->requestJson('GET', '/overlord/persona', useAdmin: true);
+        return $this->transport->requestJson('GET', '/overlord/soul', useAdmin: true);
     }
 
     public function getLlmSettings(): array
