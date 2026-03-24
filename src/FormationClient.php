@@ -550,6 +550,21 @@ class FormationClient
         $this->transport->requestJson('DELETE', "/scheduler/jobs/{$jobId}", useAdmin: true);
     }
 
+    public function updateSchedulerJob(string $jobId, array $updates): array
+    {
+        return $this->transport->requestJson('PUT', "/scheduler/jobs/{$jobId}", body: $updates, useAdmin: true);
+    }
+
+    public function pauseSchedulerJob(string $jobId): array
+    {
+        return $this->transport->requestJson('POST', "/scheduler/jobs/{$jobId}/pause", useAdmin: true);
+    }
+
+    public function resumeSchedulerJob(string $jobId): array
+    {
+        return $this->transport->requestJson('POST', "/scheduler/jobs/{$jobId}/resume", useAdmin: true);
+    }
+
     // Async / logging / a2a
     public function getAsyncConfig(): array
     {
