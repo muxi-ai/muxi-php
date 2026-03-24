@@ -129,9 +129,8 @@ jobs:
         run: |
           curl -sf -X POST \
             -H "Content-Type: application/json" \
-            -d '{"repository":{"url":"https://github.com/muxi-ai/muxi-php"}}' \
-            "https://packagist.org/api/github?username=muxi" \
-            -u "muxi:${{ secrets.MUXI_SDK_PACKAGIST_TOKEN }}"
+            -d '{"repository":{"url":"https://packagist.org/packages/muxi/muxi-php"}}' \
+            "https://packagist.org/api/update-package?username=muxi&apiToken=${{ secrets.MUXI_SDK_PACKAGIST_TOKEN }}"
 
   sync_develop:
     if: "!startsWith(github.event.head_commit.message, 'chore: release')"
