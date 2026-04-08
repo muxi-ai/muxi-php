@@ -98,6 +98,8 @@ class FormationTransport
 
         $event = null;
         $dataParts = [];
+        $buffer = '';
+        $callbackError = null;
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -105,28 +107,25 @@ class FormationTransport
             CURLOPT_HTTPHEADER => $this->formatHeaders($headers),
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT => 0,
-            CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$event, &$dataParts, $callback) {
-                foreach (explode("\n", $data) as $rawLine) {
-                    $line = trim($rawLine);
-                    if (str_starts_with($line, ':')) {
-                        continue;
-                    }
+            CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$buffer, &$event, &$dataParts, &$callbackError, $callback) {
+                $buffer .= $data;
 
-                    if ($line === '') {
-                        if (!empty($dataParts)) {
+                while (($pos = strpos($buffer, "\n")) !== false) {
+                    $rawLine = substr($buffer, 0, $pos);
+                    $buffer = substr($buffer, $pos + 1);
+                    $line = rtrim($rawLine, "\r");
+
+                    try {
+                        $parsed = $this->consumeSseLine($line, $event, $dataParts);
+                        if ($parsed !== null) {
+                            $this->throwIfRouteError($parsed);
                             if ($callback) {
-                                $callback(['event' => $event ?? 'message', 'data' => implode("\n", $dataParts)]);
+                                $callback($parsed);
                             }
                         }
-                        $event = null;
-                        $dataParts = [];
-                        continue;
-                    }
-
-                    if (str_starts_with($line, 'event:')) {
-                        $event = trim(substr($line, 6));
-                    } elseif (str_starts_with($line, 'data:')) {
-                        $dataParts[] = trim(substr($line, 5));
+                    } catch (\Throwable $e) {
+                        $callbackError = $e;
+                        return 0;
                     }
                 }
                 return strlen($data);
@@ -137,8 +136,99 @@ class FormationTransport
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
         }
 
-        curl_exec($ch);
+        $result = curl_exec($ch);
+        if ($callbackError instanceof \Throwable) {
+            curl_close($ch);
+            throw $callbackError;
+        }
+        if ($buffer !== '') {
+            $parsed = $this->consumeSseLine(rtrim($buffer, "\r"), $event, $dataParts);
+            if ($parsed !== null) {
+                $this->throwIfRouteError($parsed);
+                if ($callback) {
+                    $callback($parsed);
+                }
+            }
+        }
+        $finalEvent = $this->flushSseEvent($event, $dataParts);
+        if ($finalEvent !== null) {
+            $this->throwIfRouteError($finalEvent);
+            if ($callback) {
+                $callback($finalEvent);
+            }
+        }
+        if ($result === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            throw new ConnectionException($error === '' ? 'stream error' : $error);
+        }
         curl_close($ch);
+    }
+
+    private function consumeSseLine(string $line, ?string &$event, array &$dataParts): ?array
+    {
+        if (str_starts_with($line, ':')) {
+            return null;
+        }
+
+        if ($line === '') {
+            return $this->flushSseEvent($event, $dataParts);
+        }
+
+        [$field, $value] = $this->splitSseField($line);
+        if ($field === 'event') {
+            $event = $value;
+        } elseif ($field === 'data') {
+            $dataParts[] = $value;
+        }
+
+        return null;
+    }
+
+    private function flushSseEvent(?string &$event, array &$dataParts): ?array
+    {
+        if ($event === null && empty($dataParts)) {
+            return null;
+        }
+
+        $parsed = ['event' => $event ?? 'message', 'data' => implode("\n", $dataParts)];
+        $event = null;
+        $dataParts = [];
+        return $parsed;
+    }
+
+    private function throwIfRouteError(array $event): void
+    {
+        if (($event['event'] ?? '') !== 'error') {
+            return;
+        }
+
+        $code = 'STREAM_ERROR';
+        $message = ($event['data'] ?? '') === '' ? 'stream error' : (string) $event['data'];
+        $details = null;
+
+        try {
+            $parsed = json_decode((string) ($event['data'] ?? ''), true, 512, JSON_THROW_ON_ERROR);
+            if (is_array($parsed)) {
+                $details = $parsed;
+                $code = (string) ($parsed['type'] ?? $parsed['code'] ?? $parsed['error'] ?? $code);
+                $message = (string) ($parsed['error'] ?? $parsed['message'] ?? $message);
+            }
+        } catch (\Throwable) {
+        }
+
+        throw new MuxiException($code, $message, 0, $details);
+    }
+
+    private function splitSseField(string $line): array
+    {
+        $parts = explode(':', $line, 2);
+        $field = $parts[0];
+        $value = $parts[1] ?? '';
+        if (str_starts_with($value, ' ')) {
+            $value = substr($value, 1);
+        }
+        return [$field, $value];
     }
 
     private function buildUrl(string $path, ?array $params): array
