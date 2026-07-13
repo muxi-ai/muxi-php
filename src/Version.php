@@ -6,5 +6,5 @@ namespace Muxi;
 
 final class Version
 {
-    public const VERSION = '0.20260408.0';
+    public const VERSION = '1.0.0';
 }

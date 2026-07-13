@@ -386,6 +386,7 @@ class FormationTransport
 
         $req = $obj['request'] ?? [];
         $requestId = $req['id'] ?? $obj['request_id'] ?? null;
+        $idempotencyKey = $req['idempotency_key'] ?? null;
         $ts = $obj['timestamp'] ?? null;
         $data = $obj['data'];
 
@@ -393,6 +394,9 @@ class FormationTransport
             $out = $data;
             if ($requestId !== null) {
                 $out['request_id'] = $out['request_id'] ?? $requestId;
+            }
+            if ($idempotencyKey !== null) {
+                $out['idempotency_key'] = $out['idempotency_key'] ?? $idempotencyKey;
             }
             if ($ts !== null) {
                 $out['timestamp'] = $out['timestamp'] ?? $ts;
@@ -507,6 +511,29 @@ class FormationClient
     public function deleteSecret(string $key): void
     {
         $this->transport->requestJson('DELETE', "/secrets/{$key}", useAdmin: true);
+    }
+
+    /**
+     * Widgets from an `event: ui` stream frame; [] for other frames.
+     *
+     * The runtime delivers the response envelope's optional `ui` array
+     * (options, action_link, mcp_resource widgets) as a single `event: ui`
+     * SSE frame before `event: done`. Unknown widget types should be
+     * ignored (progressive enhancement).
+     */
+    public static function parseUiWidgets(array $event): array
+    {
+        if (($event['event'] ?? '') !== 'ui') {
+            return [];
+        }
+
+        $parsed = json_decode((string) ($event['data'] ?? ''), true);
+        if (!is_array($parsed)) {
+            return [];
+        }
+
+        $ui = $parsed['ui'] ?? null;
+        return is_array($ui) && array_is_list($ui) ? $ui : [];
     }
 
     // Chat

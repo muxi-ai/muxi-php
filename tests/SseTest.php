@@ -56,4 +56,63 @@ class SseTest extends TestCase
 
         $method->invoke($transport, ['event' => 'error', 'data' => '{"error":"boom","type":"RUNTIME_ERROR"}']);
     }
+
+    public function testParseUiWidgetsFromUiFrame(): void
+    {
+        $event = [
+            'event' => 'ui',
+            'data' => '{"ui":[{"type":"options","id":"w1","prompt":"Which?",'
+                . '"options":[{"value":"us","label":"United States"}]},'
+                . '{"type":"action_link","id":"w2","label":"Dash","url":"https://x.io"}]}',
+        ];
+
+        $widgets = \Muxi\FormationClient::parseUiWidgets($event);
+
+        $this->assertCount(2, $widgets);
+        $this->assertSame('options', $widgets[0]['type']);
+        $this->assertSame('United States', $widgets[0]['options'][0]['label']);
+        $this->assertSame('https://x.io', $widgets[1]['url']);
+    }
+
+    public function testParseUiWidgetsIgnoresOtherFrames(): void
+    {
+        $this->assertSame([], \Muxi\FormationClient::parseUiWidgets(['event' => 'message', 'data' => 'hi']));
+        $this->assertSame([], \Muxi\FormationClient::parseUiWidgets(['event' => 'ui', 'data' => 'not json']));
+        $this->assertSame([], \Muxi\FormationClient::parseUiWidgets(['event' => 'ui', 'data' => '{"ui":{}}']));
+    }
+
+    public function testUnwrapEnvelopeSurfacesIdempotencyKey(): void
+    {
+        $transport = $this->transport();
+        $method = new ReflectionMethod(FormationTransport::class, 'unwrapEnvelope');
+        $method->setAccessible(true);
+
+        $out = $method->invoke($transport, [
+            'object' => 'api_response',
+            'timestamp' => 123,
+            'request' => ['id' => 'req-1', 'idempotency_key' => 'idem-42'],
+            'data' => ['foo' => 'bar'],
+            'success' => true,
+        ]);
+
+        $this->assertSame('bar', $out['foo']);
+        $this->assertSame('req-1', $out['request_id']);
+        $this->assertSame('idem-42', $out['idempotency_key']);
+    }
+
+    public function testUnwrapEnvelopeOmitsIdempotencyKeyWhenAbsent(): void
+    {
+        $transport = $this->transport();
+        $method = new ReflectionMethod(FormationTransport::class, 'unwrapEnvelope');
+        $method->setAccessible(true);
+
+        $out = $method->invoke($transport, [
+            'object' => 'api_response',
+            'request' => ['id' => 'req-1'],
+            'data' => ['foo' => 'bar'],
+            'success' => true,
+        ]);
+
+        $this->assertArrayNotHasKey('idempotency_key', $out);
+    }
 }

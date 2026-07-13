@@ -238,6 +238,7 @@ class Transport
 
         $req = $obj['request'] ?? [];
         $requestId = $req['id'] ?? $obj['request_id'] ?? null;
+        $idempotencyKey = $req['idempotency_key'] ?? null;
         $ts = $obj['timestamp'] ?? null;
         $data = $obj['data'];
 
@@ -245,6 +246,9 @@ class Transport
             $out = $data;
             if ($requestId !== null) {
                 $out['request_id'] = $out['request_id'] ?? $requestId;
+            }
+            if ($idempotencyKey !== null) {
+                $out['idempotency_key'] = $out['idempotency_key'] ?? $idempotencyKey;
             }
             if ($ts !== null) {
                 $out['timestamp'] = $out['timestamp'] ?? $ts;
