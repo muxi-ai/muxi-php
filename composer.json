@@ -2,7 +2,7 @@
     "name": "muxi/muxi-php",
     "description": "MUXI PHP SDK - Manage AI agent formations and interact with their runtime APIs",
     "type": "library",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "keywords": ["muxi", "ai", "sdk", "agents", "formations"],
     "homepage": "https://github.com/muxi-ai/muxi-php",
     "authors": [
